@@ -7,8 +7,14 @@ public class DataEvent {
 	private final Topic topic;
 	private final long timestamp;
 	private final double[] data;
+	private final AbstractDataSource sender;
 	
 	public DataEvent(Topic topic, long timestamp, double[] data) {
+		this(null, topic, timestamp, data);
+	}
+	
+	public DataEvent(AbstractDataSource sender, Topic topic, long timestamp, double[] data) {
+		this.sender = sender;
 		this.topic = topic;
 		this.timestamp = timestamp;
 		this.data = data;
@@ -24,5 +30,9 @@ public class DataEvent {
 	
 	public double[] getData() {
 		return data;
+	}
+	
+	public AbstractDataSource getSender() {
+		return sender;
 	}
 }
