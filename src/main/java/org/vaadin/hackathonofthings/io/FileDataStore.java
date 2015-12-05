@@ -1,5 +1,6 @@
 package org.vaadin.hackathonofthings.io;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
@@ -34,7 +35,10 @@ public class FileDataStore extends AbstractFileDataSource implements DataSink {
 		if (event.getSender() == this) {
 			return;
 		}
-		if (writer == null) {
+		try {
+			if (writer == null) {
+				writer = new FileWriter(getFileName());
+			}
 			// store an event
 			StringBuilder line = new StringBuilder();
 			line.append(event.getTimestamp()).append(";");
@@ -46,11 +50,10 @@ public class FileDataStore extends AbstractFileDataSource implements DataSink {
 					line.append("\n");
 				}
 			}
-			try {
-				writer.write(line.toString());
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
+			writer.write(line.toString());
+			writer.flush();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -61,12 +64,18 @@ public class FileDataStore extends AbstractFileDataSource implements DataSink {
 		if (parts.length > 1) {
 			double[] data = new double[parts.length - 1];
 			long timestamp = Long.parseLong(parts[0]);
-			for (int i=0; i<parts.length-2; ++i) {
-				data[i] = Double.parseDouble(parts[i+1]);
+			for (int i = 0; i < parts.length - 2; ++i) {
+				data[i] = Double.parseDouble(parts[i + 1]);
 			}
-			return new DataEvent(this,  topic,  timestamp, data);
+			return new DataEvent(this, topic, timestamp, data);
 		}
 		return null;
+	}
+	
+	public void close() throws IOException {
+		if (writer != null) {
+			writer.close();
+		}
 	}
 
 }
