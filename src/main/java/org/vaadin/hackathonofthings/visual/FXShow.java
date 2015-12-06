@@ -40,8 +40,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class FXShow extends Application {
 
     public static final int LIMIT = 600;
-    public static final int G_RANGE = 8;
-    public static final double ROTATION_SPEED_DEG_S = 500d;
+    public static final int G_RANGE = 16;
+    public static final double ROTATION_SPEED_DEG_S = 2000d;
+    //    public static final String DATA_FILE = "d:\\elmot_cut1.log";
+    public static final String DATA_FILE = "com9";
     static ConcurrentLinkedQueue<double[]> dataQ = new ConcurrentLinkedQueue<>();
 
     @Override
@@ -151,14 +153,13 @@ public class FXShow extends Application {
                     dataQ.remove();
                 }
             });
-            try {
-                while (!isInterrupted())
-                {
-                    chartUpdateWorker.readFile("d:\\elmot_cut1.log");
+            while (!isInterrupted())
+                try {
+
+                    chartUpdateWorker.readFile(DATA_FILE);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
