@@ -25,7 +25,9 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
 import org.vaadin.hackathonofthings.data.DataEvent;
+import org.vaadin.hackathonofthings.data.DataSink;
 import org.vaadin.hackathonofthings.data.Topic;
 import org.vaadin.hackathonofthings.io.AbstractFileDataSourceClassic;
 
@@ -37,14 +39,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  * @author Vaadin Ltd
  */
-public class FXShow extends Application {
+public class FXShow extends Application implements DataSink {
 
     public static final int LIMIT = 600;
     public static final int G_RANGE = 16;
     public static final double ROTATION_SPEED_DEG_S = 2000d;
 //        public static final String DATA_FILE = "d:\\elmot_cut1.log";
     public static final String DATA_FILE = "com9";
-    static ConcurrentLinkedQueue<double[]> dataQ = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<double[]> dataQ = new ConcurrentLinkedQueue<>();
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -71,7 +73,7 @@ public class FXShow extends Application {
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.show();
-        new FileReadingThread().start();
+        new FileReadingThread(this).start();
         Platform.runLater(new FxUpdate(chart));
     }
 
@@ -123,7 +125,7 @@ public class FXShow extends Application {
     }
 
 
-    private static class FxUpdate implements Runnable {
+    private class FxUpdate implements Runnable {
         private final XYChart<Number, Number> chart;
 
         public FxUpdate(XYChart<Number, Number> chart) {
@@ -152,19 +154,17 @@ public class FXShow extends Application {
     }
 
     private static class FileReadingThread extends Thread {
-        public FileReadingThread() {
-            setDaemon(true);
+        private DataSink sink;
+
+		public FileReadingThread(DataSink sink) {
+            this.sink = sink;
+			setDaemon(true);
         }
 
         @Override
         public void run() {
             ChartUpdateWorker chartUpdateWorker = new ChartUpdateWorker();
-            chartUpdateWorker.addSink(data -> {
-                dataQ.add(data.getData());
-                while (dataQ.size() > LIMIT) {
-                    dataQ.remove();
-                }
-            });
+            chartUpdateWorker.addSink(sink);
             while (!isInterrupted())
                 try {
 
@@ -174,4 +174,13 @@ public class FXShow extends Application {
                 }
         }
     }
+    
+	@Override
+	public void consumeData(DataEvent data) {
+		dataQ.add(data.getData());
+		while (dataQ.size() > LIMIT) {
+			dataQ.remove();
+		}
+	}
+
 }
