@@ -63,7 +63,6 @@ public class FXShow extends Application implements DataSink {
             for (int i = 0; i < LIMIT; i++) series.getData().add(new XYChart.Data<>(i, -1d));
             chart.getData().add(series);
         }
-        chart.setStyle("-fx-background-color: rgba(0, 100, 100, 0.5)");
         Scene scene = new Scene(chart);
         decorateStage(stage, scene);
         stage.setScene(scene);

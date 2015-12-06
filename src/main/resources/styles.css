@@ -1,3 +1,19 @@
+.chart {
+	-fx-background-color: rgba(0, 100, 100, 0.5);
+}
+
 .chart-plot-background {
-    -fx-background-color: rgba(200, 200, 200, 0.6)
+    -fx-background-color: rgba(200, 200, 200, 0.6);
+}
+
+.chart-series-line {    
+    -fx-stroke-width: 5px;
+    -fx-effect: null;
+}
+
+.chart-vertical-grid-lines {
+    -fx-stroke: transparent;
+}
+.chart-horizontal-grid-lines {
+    -fx-stroke: transparent;
 }
