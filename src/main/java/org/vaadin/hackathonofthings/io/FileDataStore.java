@@ -1,5 +1,6 @@
 package org.vaadin.hackathonofthings.io;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -11,12 +12,20 @@ import org.vaadin.hackathonofthings.data.Topic;
 /**
  * Data store saving incoming (sinked) events to the disk and retrieving them
  * later for playback. Data retrieval is done based on the topic.
+ * 
+ * Usage: create a FileDataStore, use it as a sink, add replay targets as sinks
+ * on FDS and call replay() to re-send the same events.
+ * 
+ * Events sent to the FDS are not sent to the consumers immediately but both the
+ * original data source and the FDS should be added as sinks for the original
+ * data source.
  */
 public class FileDataStore extends AbstractFileDataSource implements DataSink {
 
 	private Topic topic;
 
 	private Writer writer;
+	private String fileName;
 
 	public FileDataStore(Topic topic) {
 		super(topic);
@@ -24,20 +33,29 @@ public class FileDataStore extends AbstractFileDataSource implements DataSink {
 	}
 
 	public void replay() throws IOException {
-		readFile(getFileName());
+		if (writer != null) {
+			close();
+		}
+		if (fileName != null) {
+			readFile(fileName);
+		}
 	}
 
-	protected String getFileName() {
+	protected String convertTopicToFileName() {
 		return topic.getId().replaceAll("[^a-zA-Z0-9_-]", "_");
 	}
 
 	public void consumeData(DataEvent event) {
 		if (event.getSender() == this) {
+			// ignore replay events
 			return;
 		}
 		try {
 			if (writer == null) {
-				writer = new FileWriter(getFileName());
+				File file = File.createTempFile(convertTopicToFileName(), ".log", new File("."));
+				fileName = file.getCanonicalPath();
+				// System.err.println(fileName);
+				writer = new FileWriter(file);
 			}
 			// store an event
 			StringBuilder line = new StringBuilder();
@@ -75,6 +93,7 @@ public class FileDataStore extends AbstractFileDataSource implements DataSink {
 	public void close() throws IOException {
 		if (writer != null) {
 			writer.close();
+			writer = null;
 		}
 	}
 
