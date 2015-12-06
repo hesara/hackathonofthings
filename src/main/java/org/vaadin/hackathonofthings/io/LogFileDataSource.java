@@ -9,6 +9,8 @@ import org.vaadin.hackathonofthings.data.Topic;
 public class LogFileDataSource extends AbstractFileDataSource {
 
 	private Topic topic;
+	
+	private long previousTimestamp = 0;
 
 	public LogFileDataSource(Topic topic) {
 		super(topic);
@@ -25,6 +27,14 @@ public class LogFileDataSource extends AbstractFileDataSource {
 			for (int i = 0; i < parts.length - 2; ++i) {
 				data[i] = Double.parseDouble(parts[i + 1]);
 			}
+			if (previousTimestamp > 0) {
+				try {
+					Thread.sleep(Math.min(
+							Math.max(timestamp - previousTimestamp, 1), 1000));
+				} catch (InterruptedException e) {
+				}
+			}
+			previousTimestamp = timestamp;
 			return new DataEvent(this, topic, timestamp, data);
 		}
 		return null;
