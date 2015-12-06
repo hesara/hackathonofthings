@@ -2,7 +2,7 @@ package org.vaadin.hackathonofthings.visual;
 
 import org.vaadin.hackathonofthings.data.DataSink;
 import org.vaadin.hackathonofthings.data.Topic;
-import org.vaadin.hackathonofthings.io.FileDataStore;
+import org.vaadin.hackathonofthings.io.FileLogger;
 
 public class FileReadingThread extends Thread {
 	// public static final String DATA_FILE = "d:\\elmot_cut1.log";
@@ -21,7 +21,7 @@ public class FileReadingThread extends Thread {
         chartUpdateWorker.addSink(sink);
 		while (!isInterrupted()) {
             try {
-                FileDataStore store = new FileDataStore(new Topic("captured"));
+                FileLogger store = new FileLogger(new Topic("captured"));
         		chartUpdateWorker.addSink(store);
 
         		// read the contents

@@ -10,35 +10,22 @@ import org.vaadin.hackathonofthings.data.DataSink;
 import org.vaadin.hackathonofthings.data.Topic;
 
 /**
- * Data store saving incoming (sinked) events to the disk and retrieving them
- * later for playback. Data retrieval is done based on the topic.
+ * Data store saving incoming (sinked) events to the disk.
  * 
- * Usage: create a FileDataStore, use it as a sink, add replay targets as sinks
- * on FDS and call replay() to re-send the same events.
+ * Usage: create a FileLogger, use it as a sink.
  * 
- * Events sent to the FDS are not sent to the consumers immediately but both the
- * original data source and the FDS should be added as sinks for the original
- * data source.
+ * Events sent to the logger are not sent to the consumers immediately but both
+ * the original data source and the logger should be added as sinks for the
+ * original data source.
  */
-public class FileDataStore extends AbstractFileDataSource implements DataSink {
+public class FileLogger implements DataSink {
 
 	private Topic topic;
 
 	private Writer writer;
-	private String fileName;
 
-	public FileDataStore(Topic topic) {
-		super(topic);
+	public FileLogger(Topic topic) {
 		this.topic = topic;
-	}
-
-	public void replay() throws IOException {
-		if (writer != null) {
-			close();
-		}
-		if (fileName != null) {
-			readFile(fileName);
-		}
 	}
 
 	protected String convertTopicToFileName() {
@@ -46,14 +33,14 @@ public class FileDataStore extends AbstractFileDataSource implements DataSink {
 	}
 
 	public void consumeData(DataEvent event) {
-		if (event.getSender() == this) {
+		if (event.getSender() instanceof LogFileDataSource) {
 			// ignore replay events
 			return;
 		}
 		try {
 			if (writer == null) {
 				File file = File.createTempFile(convertTopicToFileName(), ".log", new File("."));
-				fileName = file.getCanonicalPath();
+				String fileName = file.getCanonicalPath();
 				// System.err.println(fileName);
 				writer = new FileWriter(file);
 			}
@@ -75,21 +62,6 @@ public class FileDataStore extends AbstractFileDataSource implements DataSink {
 		}
 	}
 
-	@Override
-	protected DataEvent convertLine(String line) {
-		// convert read data back
-		String[] parts = line.split(";");
-		if (parts.length > 1) {
-			double[] data = new double[parts.length - 1];
-			long timestamp = Long.parseLong(parts[0]);
-			for (int i = 0; i < parts.length - 2; ++i) {
-				data[i] = Double.parseDouble(parts[i + 1]);
-			}
-			return new DataEvent(this, topic, timestamp, data);
-		}
-		return null;
-	}
-	
 	public void close() throws IOException {
 		if (writer != null) {
 			writer.close();
