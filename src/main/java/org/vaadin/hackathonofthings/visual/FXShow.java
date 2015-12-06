@@ -24,11 +24,11 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.vaadin.hackathonofthings.data.DataEvent;
 import org.vaadin.hackathonofthings.data.Topic;
-import org.vaadin.hackathonofthings.io.AbstractFileDataSource;
+import org.vaadin.hackathonofthings.io.AbstractFileDataSourceClassic;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -42,14 +42,13 @@ public class FXShow extends Application {
     public static final int LIMIT = 600;
     public static final int G_RANGE = 16;
     public static final double ROTATION_SPEED_DEG_S = 2000d;
-    //    public static final String DATA_FILE = "d:\\elmot_cut1.log";
+//        public static final String DATA_FILE = "d:\\elmot_cut1.log";
     public static final String DATA_FILE = "com9";
     static ConcurrentLinkedQueue<double[]> dataQ = new ConcurrentLinkedQueue<>();
 
     @Override
     public void start(Stage stage) throws Exception {
         stage.setTitle("TeleFence");
-        stage.setFullScreen(true);
         stage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("F11"));
         NumberAxis xAxis = new NumberAxis();
         NumberAxis yAxis = new NumberAxis(-16, 16, 2);
@@ -66,7 +65,9 @@ public class FXShow extends Application {
             for (int i = 0; i < LIMIT; i++) series.getData().add(new XYChart.Data<>(i, -1d));
             chart.getData().add(series);
         }
+        chart.setStyle("-fx-background-color: rgba(0, 100, 100, 0.5)");
         Scene scene = new Scene(chart);
+        decorateStage(stage, scene);
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.show();
@@ -74,24 +75,35 @@ public class FXShow extends Application {
         Platform.runLater(new FxUpdate(chart));
     }
 
+    private void decorateStage(Stage stage, Scene scene) {
+        stage.initStyle(StageStyle.TRANSPARENT);
+        stage.setFullScreen(true);
+        scene.setFill(null);
+        scene.getStylesheets().add("styles.css");
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
 
-    static class ChartUpdateWorker extends AbstractFileDataSource {
+    static class ChartUpdateWorker extends AbstractFileDataSourceClassic {
         public ChartUpdateWorker() {
             super(new Topic("sword"));
+        }
+
+        @Override
+        protected boolean checkContinue() {
+            return !Thread.currentThread().isInterrupted();
         }
 
         @Override
         protected DataEvent convertLine(String line) {
             long timeMillis = System.currentTimeMillis();
             double[] dataPoint = new double[7];
-//            dataQ.add(dataPoint);
             for (int i = 0; i < 6; i++) {
                 try {
                     dataPoint[i] = Double.parseDouble(line.substring(i * 7, i * 7 + 6));
-                    System.out.print("\t" + dataPoint[i]);
+//                    System.out.print("\t" + dataPoint[i]);
                 } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                     System.err.println("Broken line");
                     return null;
@@ -104,8 +116,7 @@ public class FXShow extends Application {
             dataPoint[1] = dataPoint[1] * G_RANGE / 32768;
             dataPoint[0] = -dataPoint[0] * G_RANGE / 32768;
             dataPoint[3] = Math.sqrt(dataPoint[0] * dataPoint[0] + dataPoint[1] * dataPoint[1] + dataPoint[2] * dataPoint[2]);
-            System.out.print('\r');
-//            while (dataQ.size() > LIMIT) dataQ.remove();
+//            System.out.print('\r');
             return new DataEvent(getTopic(), timeMillis, dataPoint);
         }
 
@@ -133,8 +144,9 @@ public class FXShow extends Application {
                     }
                 }
             }
+            Thread.yield();
+            Platform.runLater(this);
 
-            Platform.runLater(new FxUpdate(chart));
 
         }
     }
