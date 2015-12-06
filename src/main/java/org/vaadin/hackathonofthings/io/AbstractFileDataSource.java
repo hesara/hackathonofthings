@@ -1,6 +1,7 @@
 package org.vaadin.hackathonofthings.io;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
@@ -17,7 +18,7 @@ public abstract class AbstractFileDataSource extends AbstractDataSource {
     }
 
     public void readFile(String filename) throws IOException {
-        try (Stream<String> lines = Files.lines(Paths.get(filename))) {
+        try (Stream<String> lines = Files.lines(Paths.get(filename), StandardCharsets.US_ASCII)) {
             lines.map(this::convertLine).filter(event -> event != null).forEach(this::sendEvent);
         }
     }
